@@ -12,7 +12,7 @@ def get_streamer(callback, chunk):
         return (None, pyaudio.paContinue)
 
     audio = pyaudio.PyAudio()
-    stream = audio.open(format=pyaudio.paInt16, channels=1,
+    stream = audio.open(format=pyaudio.paInt16, channels=2,
                         rate=44100, input=True, frames_per_buffer=chunk,
                         stream_callback=inner_callback)
     return stream
@@ -21,7 +21,7 @@ def get_streamer(callback, chunk):
 def get_player():
     """ initialize a new player """
     audio = pyaudio.PyAudio()
-    stream = audio.open(format=pyaudio.paInt16, channels=1,
+    stream = audio.open(format=pyaudio.paInt16, channels=2,
                         rate=44100, output=True)
     return stream
 
@@ -61,6 +61,7 @@ class CallAPI:
     def process_call(self, recp):
         self.on_talk = True
         player = get_player()
+        queue = Queue()
 
         def stream_handle(data):
             self.sock.sendto(data, recp)
@@ -68,12 +69,19 @@ class CallAPI:
         def process():
             while self.on_talk:
                 data, addr = self.sock.recvfrom(1024)
-                player.write(data)
+                queue.put(data)
+
+        def speak():
+            while self.on_talk:
+                if not queue.empty():
+                    player.write(queue.get())
 
         thread = threading.Thread(target=process)
+        thread1 = threading.Thread(target=speak)
         streamer = get_streamer(stream_handle, 1024)
         streamer.start_stream()
         thread.start()
+        thread1.start()
 
         while True:
             if input("End (Y) ") == "Y":
