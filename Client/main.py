@@ -12,7 +12,7 @@ sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind((ip, port))
 
 puncher = UDPPunch(("158.69.1.114", 5700))
-api = API("0.0.0.0:5701", puncher)
+api = API("158.69.1.114:5701", puncher)
 try:
     api.register(name, "1234")
 except:
